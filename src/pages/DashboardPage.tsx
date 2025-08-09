@@ -92,6 +92,28 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ setActivePage }) => {
             <li>
               <button
                 className={`w-full flex items-center px-4 py-3 rounded-lg transition-colors ${
+                  activeTab === 'activity' ? 'bg-white bg-opacity-10' : 'hover:bg-white hover:bg-opacity-5'
+                }`}
+                onClick={() => setActivePage('activity')}
+              >
+                <Clock className="mr-3" size={18} />
+                Activity Timeline
+              </button>
+            </li>
+            <li>
+              <button
+                className={`w-full flex items-center px-4 py-3 rounded-lg transition-colors ${
+                  activeTab === 'referrals' ? 'bg-white bg-opacity-10' : 'hover:bg-white hover:bg-opacity-5'
+                }`}
+                onClick={() => setActivePage('referrals')}
+              >
+                <Gift className="mr-3" size={18} />
+                Referrals
+              </button>
+            </li>
+            <li>
+              <button
+                className={`w-full flex items-center px-4 py-3 rounded-lg transition-colors ${
                   activeTab === 'settings' ? 'bg-white bg-opacity-10' : 'hover:bg-white hover:bg-opacity-5'
                 }`}
                 onClick={() => setActiveTab('settings')}

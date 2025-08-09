@@ -2,9 +2,10 @@ import React, { useState, useEffect } from 'react';
 import { Search, Filter, X } from 'lucide-react';
 import { Service } from '../types';
 import { useLanguage } from '../context/LanguageContext';
-import ServiceCard from '../components/ServiceCard';
+import EnhancedServiceCard from '../components/EnhancedServiceCard';
 import Button from '../components/Button';
-import { services, categories } from '../data/mockData';
+import { supabase } from '../lib/supabaseClient';
+import { useAuth } from '../context/AuthContext';
 
 interface ServicesPageProps {
   onServiceClick: (serviceId: string) => void;
@@ -12,6 +13,9 @@ interface ServicesPageProps {
 
 const ServicesPage: React.FC<ServicesPageProps> = ({ onServiceClick }) => {
   const { t, isRTL } = useLanguage();
+  const { user } = useAuth();
+  const [services, setServices] = useState<Service[]>([]);
+  const [categories, setCategories] = useState<string[]>([]);
   const [filteredServices, setFilteredServices] = useState<Service[]>(services);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<string>('');
@@ -20,8 +24,66 @@ const ServicesPage: React.FC<ServicesPageProps> = ({ onServiceClick }) => {
   const [maxHours, setMaxHours] = useState<number>(10);
   const [isMobileFilterOpen, setIsMobileFilterOpen] = useState(false);
 
-  // Extract unique locations from services
-  const locations = Array.from(new Set(services.map((service) => service.location)));
+  const [locations, setLocations] = useState<string[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  // Fetch services from Supabase
+  useEffect(() => {
+    const fetchServices = async () => {
+      try {
+        setLoading(true);
+        
+        const { data, error } = await supabase
+          .rpc('search_services_advanced', {
+            search_term: searchTerm,
+            category_filter: selectedCategory,
+            min_price: 0,
+            max_price: maxHours,
+            location_filter: selectedLocation,
+            rating_filter: minRating
+          });
+
+        if (error) throw error;
+
+        const formattedServices = data?.map((service: any) => ({
+          id: service.id,
+          title: service.title,
+          description: service.description,
+          category: service.category,
+          provider: {
+            id: service.provider_id,
+            name: service.provider_name,
+            avatar: service.provider_avatar,
+            email: '',
+            phone: '',
+            balance: 0,
+            joinedAt: new Date()
+          },
+          hourlyRate: service.hourly_rate,
+          location: service.location,
+          rating: service.rating,
+          reviews: service.reviews_count,
+          image: service.image_url || 'https://images.pexels.com/photos/3861958/pexels-photo-3861958.jpeg'
+        })) || [];
+
+        setServices(formattedServices);
+        setFilteredServices(formattedServices);
+        
+        // Extract unique categories and locations
+        const uniqueCategories = Array.from(new Set(formattedServices.map(s => s.category)));
+        const uniqueLocations = Array.from(new Set(formattedServices.map(s => s.location)));
+        
+        setCategories(uniqueCategories);
+        setLocations(uniqueLocations);
+      } catch (error) {
+        console.error('Error fetching services:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchServices();
+  }, [searchTerm, selectedCategory, selectedLocation, minRating, maxHours]);
 
   // Apply filters
   useEffect(() => {
@@ -58,7 +120,7 @@ const ServicesPage: React.FC<ServicesPageProps> = ({ onServiceClick }) => {
     }
     
     setFilteredServices(result);
-  }, [searchTerm, selectedCategory, selectedLocation, minRating, maxHours]);
+  }, [services, searchTerm, selectedCategory, selectedLocation, minRating, maxHours]);
 
   const clearFilters = () => {
     setSearchTerm('');
@@ -206,7 +268,12 @@ const ServicesPage: React.FC<ServicesPageProps> = ({ onServiceClick }) => {
         
         {/* Services Grid */}
         <div className="flex-1">
-          {filteredServices.length === 0 ? (
+          {loading ? (
+            <div className="text-center py-12">
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#2E86AB] mx-auto mb-4"></div>
+              <p className="text-gray-600">جاري التحميل...</p>
+            </div>
+          ) : filteredServices.length === 0 ? (
             <div className="text-center py-12 md:py-16 bg-white rounded-xl shadow-sm">
               <div className="max-w-md mx-auto px-4">
                 <h3 className="text-lg md:text-xl font-semibold mb-2">{t('services.noResults')}</h3>
@@ -223,10 +290,11 @@ const ServicesPage: React.FC<ServicesPageProps> = ({ onServiceClick }) => {
               </div>
               <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 md:gap-6">
                 {filteredServices.map((service) => (
-                  <ServiceCard
+                  <EnhancedServiceCard
                     key={service.id}
                     service={service}
                     onClick={() => onServiceClick(service.id)}
+                    showStats={true}
                   />
                 ))}
               </div>
