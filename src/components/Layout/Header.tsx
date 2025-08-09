@@ -27,7 +27,9 @@ const Header: React.FC<HeaderProps> = ({ activePage, setActivePage }) => {
       <nav className={`container mx-auto px-4 flex ${isRTL ? 'flex-row-reverse' : 'flex-row'} justify-between items-center`}>
         <div className={`flex items-center text-2xl font-bold ${isRTL ? 'flex-row-reverse' : 'flex-row'}`}>
           <Clock className={`${isRTL ? 'ml-2' : 'mr-2'}`} />
-          <span>Waqti</span>
+          <span className="bg-gradient-to-r from-[#2E86AB] to-[#F18F01] bg-clip-text text-transparent font-extrabold tracking-wide">
+            WAQTI
+          </span>
         </div>
 
         {/* Mobile menu button */}
@@ -82,6 +84,16 @@ const Header: React.FC<HeaderProps> = ({ activePage, setActivePage }) => {
           </li>
           <li className={`mx-2`}>
             <button
+              onClick={() => handleNavClick('service-requests')}
+              className={`px-3 py-2 rounded-lg hover:bg-white hover:bg-opacity-20 transition-all ${
+                activePage === 'service-requests' || activePage === 'provider-matching' ? 'bg-white bg-opacity-20' : ''
+              }`}
+            >
+              طلبات الخدمات
+            </button>
+          </li>
+          <li className={`mx-2`}>
+            <button
               onClick={() => handleNavClick('freelancers')}
               className={`px-3 py-2 rounded-lg hover:bg-white hover:bg-opacity-20 transition-all ${
                 activePage === 'freelancers' || activePage === 'freelancerDetail' ? 'bg-white bg-opacity-20' : ''
@@ -93,6 +105,16 @@ const Header: React.FC<HeaderProps> = ({ activePage, setActivePage }) => {
           
           {isLoggedIn && (
             <>
+              <li className={`mx-2`}>
+                <button
+                  onClick={() => handleNavClick('referrals')}
+                  className={`px-3 py-2 rounded-lg hover:bg-white hover:bg-opacity-20 transition-all ${
+                    activePage === 'referrals' ? 'bg-white bg-opacity-20' : ''
+                  }`}
+                >
+                  الإحالات
+                </button>
+              </li>
               <li className={`mx-2`}>
                 <button
                   onClick={() => handleNavClick('wallet')}
@@ -256,6 +278,16 @@ const Header: React.FC<HeaderProps> = ({ activePage, setActivePage }) => {
             </li>
             <li className="py-2">
               <button
+                onClick={() => handleNavClick('service-requests')}
+                className={`w-full text-left px-3 py-2 rounded-lg hover:bg-white hover:bg-opacity-20 transition-all ${
+                  activePage === 'service-requests' || activePage === 'provider-matching' ? 'bg-white bg-opacity-20' : ''
+                }`}
+              >
+                طلبات الخدمات
+              </button>
+            </li>
+            <li className="py-2">
+              <button
                 onClick={() => handleNavClick('freelancers')}
                 className={`w-full text-left px-3 py-2 rounded-lg hover:bg-white hover:bg-opacity-20 transition-all ${
                   activePage === 'freelancers' || activePage === 'freelancerDetail' ? 'bg-white bg-opacity-20' : ''
@@ -267,6 +299,26 @@ const Header: React.FC<HeaderProps> = ({ activePage, setActivePage }) => {
             
             {isLoggedIn && (
               <>
+                <li className="py-2">
+                  <button
+                    onClick={() => handleNavClick('referrals')}
+                    className={`w-full text-left px-3 py-2 rounded-lg hover:bg-white hover:bg-opacity-20 transition-all ${
+                      activePage === 'referrals' ? 'bg-white bg-opacity-20' : ''
+                    }`}
+                  >
+                    الإحالات
+                  </button>
+                </li>
+                <li className="py-2">
+                  <button
+                    onClick={() => handleNavClick('activity')}
+                    className={`w-full text-left px-3 py-2 rounded-lg hover:bg-white hover:bg-opacity-20 transition-all ${
+                      activePage === 'activity' ? 'bg-white bg-opacity-20' : ''
+                    }`}
+                  >
+                    سجل الأنشطة
+                  </button>
+                </li>
                 <li className="py-2">
                   <button
                     onClick={() => handleNavClick('wallet')}

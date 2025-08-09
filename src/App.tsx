@@ -26,6 +26,11 @@ import MessagesPage from './pages/MessagesPage';
 import NotificationsPage from './pages/NotificationsPage';
 import UserProfilePage from './pages/UserProfilePage';
 import BookingManagementPage from './pages/BookingManagementPage';
+import ServiceRequestPage from './pages/ServiceRequestPage';
+import ProviderMatchingPage from './pages/ProviderMatchingPage';
+import MilestoneTrackingPage from './pages/MilestoneTrackingPage';
+import ReferralPage from './pages/ReferralPage';
+import ActivityTimelinePage from './pages/ActivityTimelinePage';
 import { LanguageProvider } from './context/LanguageContext';
 import { AuthProvider, useAuth } from './context/AuthContext';
 
@@ -35,6 +40,8 @@ function AppContent() {
   const [selectedProjectId, setSelectedProjectId] = useState<string | null>(null);
   const [selectedFreelancerId, setSelectedFreelancerId] = useState<string | null>(null);
   const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
+  const [selectedRequestId, setSelectedRequestId] = useState<string | null>(null);
+  const [selectedOrderId, setSelectedOrderId] = useState<string | null>(null);
   const [previousPage, setPreviousPage] = useState('services');
   const [verificationPhone, setVerificationPhone] = useState('');
   const { isLoading } = useAuth();
@@ -86,6 +93,8 @@ function AppContent() {
         return <HomePage setActivePage={setActivePage} onServiceClick={handleServiceClick} />;
       case 'services':
         return <ServicesPage onServiceClick={handleServiceClick} />;
+      case 'service-requests':
+        return <ServiceRequestPage setActivePage={setActivePage} />;
       case 'projects':
         return <ProjectsPage onProjectClick={handleProjectClick} />;
       case 'projectDetail':
@@ -98,6 +107,30 @@ function AppContent() {
         ) : (
           <ProjectsPage onProjectClick={handleProjectClick} />
         );
+      case 'provider-matching':
+        return selectedRequestId ? (
+          <ProviderMatchingPage 
+            requestId={selectedRequestId} 
+            setActivePage={setActivePage} 
+            goBack={goBack}
+          />
+        ) : (
+          <ServiceRequestPage setActivePage={setActivePage} />
+        );
+      case 'milestone-tracking':
+        return selectedOrderId ? (
+          <MilestoneTrackingPage 
+            orderId={selectedOrderId} 
+            setActivePage={setActivePage} 
+            goBack={goBack}
+          />
+        ) : (
+          <BookingManagementPage setActivePage={setActivePage} />
+        );
+      case 'referrals':
+        return <ReferralPage setActivePage={setActivePage} />;
+      case 'activity':
+        return <ActivityTimelinePage setActivePage={setActivePage} />;
       case 'create-project':
         return <CreateProjectPage setActivePage={setActivePage} />;
       case 'freelancers':

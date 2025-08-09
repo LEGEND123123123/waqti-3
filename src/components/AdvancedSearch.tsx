@@ -298,6 +298,17 @@ const AdvancedSearch: React.FC<AdvancedSearchProps> = ({
 
     onSearch(query);
     setShowSuggestionsState(false);
+    
+    // Log search activity
+    if (searchText.trim()) {
+      supabase.from('activity_log').insert({
+        user_id: user?.id,
+        activity_type: 'search',
+        title: 'بحث في الخدمات',
+        description: `بحث عن: ${searchText}`,
+        metadata: { query, category }
+      });
+    }
   };
 
   const handleFilterChange = (filterId: string, value: any) => {

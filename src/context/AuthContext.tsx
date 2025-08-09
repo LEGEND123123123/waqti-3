@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useState, ReactNode, useEffect } from 'react';
 import { User } from '../types';
-import { supabase } from '../lib/supabase';
+import { supabase, createProfile } from '../lib/supabaseClient';
 import type { User as SupabaseUser } from '@supabase/supabase-js';
 
 interface AuthContextType {
@@ -8,9 +8,12 @@ interface AuthContextType {
   isLoggedIn: boolean;
   isLoading: boolean;
   login: (email: string, password: string) => Promise<{ success: boolean; error?: string }>;
+  loginWithProvider: (provider: 'google' | 'github') => Promise<{ success: boolean; error?: string }>;
   register: (name: string, email: string, password: string, phone: string) => Promise<{ success: boolean; error?: string }>;
+  registerWithReferral: (name: string, email: string, password: string, phone: string, referralCode?: string) => Promise<{ success: boolean; error?: string }>;
   logout: () => Promise<void>;
   updateProfile: (updates: Partial<User>) => Promise<{ success: boolean; error?: string }>;
+  resendVerification: () => Promise<{ success: boolean; error?: string }>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -127,6 +130,37 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     }
   };
 
+  const loginWithProvider = async (provider: 'google' | 'github'): Promise<{ success: boolean; error?: string }> => {
+    try {
+      setIsLoading(true);
+      
+      const { data, error } = await supabase.auth.signInWithOAuth({
+        provider,
+        options: {
+          redirectTo: `${window.location.origin}/dashboard`
+        }
+      });
+
+      if (error) {
+        console.error('Social login error:', error);
+        return { 
+          success: false, 
+          error: error.message || 'Social login failed. Please try again.' 
+        };
+      }
+
+      return { success: true };
+    } catch (error) {
+      console.error('Social login exception:', error);
+      return { 
+        success: false, 
+        error: 'An unexpected error occurred. Please try again.' 
+      };
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   const register = async (
     name: string,
     email: string,
@@ -203,6 +237,92 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     }
   };
 
+  const registerWithReferral = async (
+    name: string,
+    email: string,
+    password: string,
+    phone: string,
+    referralCode?: string
+  ): Promise<{ success: boolean; error?: string }> => {
+    try {
+      setIsLoading(true);
+
+      // First, sign up the user
+      const { data: authData, error: signUpError } = await supabase.auth.signUp({
+        email: email.trim(),
+        password,
+        options: {
+          data: {
+            name: name.trim(),
+            phone: phone.trim(),
+            referral_code: referralCode
+          }
+        }
+      });
+
+      if (signUpError) {
+        console.error('Signup error:', signUpError);
+        return { 
+          success: false, 
+          error: signUpError.message || 'Registration failed. Please try again.' 
+        };
+      }
+
+      if (!authData.user) {
+        return { 
+          success: false, 
+          error: 'Registration failed. Please try again.' 
+        };
+      }
+
+      // Create user profile in our users table
+      const { error: profileError } = await supabase
+        .from('users')
+        .insert([
+          {
+            id: authData.user.id,
+            name: name.trim(),
+            email: email.trim(),
+            phone: phone.trim(),
+            balance: 2 // New users start with 2 hours
+          }
+        ]);
+
+      if (profileError) {
+        console.error('Profile creation error:', profileError);
+        // If profile creation fails, we should clean up the auth user
+        await supabase.auth.signOut();
+        return { 
+          success: false, 
+          error: 'Failed to create user profile. Please try again.' 
+        };
+      }
+
+      // Process referral if provided
+      if (referralCode) {
+        await supabase.rpc('process_referral_signup', {
+          new_user_id: authData.user.id,
+          referral_code: referralCode
+        });
+      }
+
+      // If email confirmation is disabled, the user will be automatically signed in
+      if (authData.session) {
+        await fetchUserProfile(authData.user.id);
+      }
+
+      return { success: true };
+    } catch (error) {
+      console.error('Registration exception:', error);
+      return { 
+        success: false, 
+        error: 'An unexpected error occurred. Please try again.' 
+      };
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   const logout = async () => {
     try {
       setIsLoading(true);
@@ -243,14 +363,43 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     }
   };
 
+  const resendVerification = async (): Promise<{ success: boolean; error?: string }> => {
+    try {
+      if (!user) {
+        return { success: false, error: 'No user logged in' };
+      }
+
+      const { error } = await supabase.auth.resend({
+        type: 'signup',
+        email: user.email,
+        options: {
+          emailRedirectTo: `${window.location.origin}/dashboard`
+        }
+      });
+
+      if (error) {
+        console.error('Resend verification error:', error);
+        return { success: false, error: error.message };
+      }
+
+      return { success: true };
+    } catch (error) {
+      console.error('Resend verification exception:', error);
+      return { success: false, error: 'Failed to resend verification email' };
+    }
+  };
+
   const value = {
     user,
     isLoggedIn,
     isLoading,
     login,
+    loginWithProvider,
     register,
+    registerWithReferral,
     logout,
-    updateProfile
+    updateProfile,
+    resendVerification
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
