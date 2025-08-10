@@ -324,21 +324,26 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
--- Function for Milestone Approval
 CREATE OR REPLACE FUNCTION approve_milestone(
   milestone_id uuid,
   approver_id uuid
 ) RETURNS void AS $$
 DECLARE
   milestone_amount integer;
+  milestone_order_id uuid;
   order_record record;
 BEGIN
-  -- Get milestone details
-  SELECT amount, order_id 
-  INTO milestone_amount, order_record
+  -- Get milestone amount and order_id
+  SELECT m.amount, m.order_id
+  INTO milestone_amount, milestone_order_id
   FROM milestones m
-  JOIN orders o ON m.order_id = o.id
   WHERE m.id = milestone_id;
+
+  -- Get full order record
+  SELECT *
+  INTO order_record
+  FROM orders o
+  WHERE o.id = milestone_order_id;
 
   -- Update milestone status
   UPDATE milestones 
