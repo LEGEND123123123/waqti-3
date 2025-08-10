@@ -333,7 +333,6 @@ DECLARE
   milestone_order_id uuid;
   order_record record;
 BEGIN
-  -- Get milestone amount and order_id
   SELECT m.amount, m.order_id
   INTO milestone_amount, milestone_order_id
   FROM milestones m
