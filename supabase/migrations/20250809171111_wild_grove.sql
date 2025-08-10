@@ -334,7 +334,8 @@ DECLARE
   order_record record;
 BEGIN
   -- Get milestone details
-  SELECT amount, order_id INTO milestone_amount, order_record
+  SELECT amount, order_id 
+  INTO milestone_amount, order_record
   FROM milestones m
   JOIN orders o ON m.order_id = o.id
   WHERE m.id = milestone_id;
